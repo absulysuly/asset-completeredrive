@@ -1,0 +1,184 @@
+// Prisma schema for Eventra MVP (User, Event)
+// SQLite for local/dev
+
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  events    Event[]
+  venues    Venue[]  // Multi-venue platform support
+  resets    PasswordResetToken[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id            String   @id @default(cuid())
+  // Base fields not localized
+  date          DateTime
+  category      String?
+  imageUrl      String?
+  whatsappGroup String?
+  whatsappPhone String?
+  contactMethod String?
+  sourceUrl     String?
+  publicId      String   @unique
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String
+  // New city code (display via translations file)
+  city          String?
+  // Geocoded coordinates (optional)
+  latitude      Float?
+  longitude     Float?
+  // Localized content via translations
+  translations  EventTranslation[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum Locale {
+  en
+  ar
+  ku
+}
+
+model EventTranslation {
+  id          String  @id @default(cuid())
+  locale      Locale
+  title       String
+  description String
+  location    String
+  event       Event   @relation(fields: [eventId], references: [id])
+  eventId     String
+
+  @@unique([eventId, locale])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// Venue types for multi-platform support
+enum VenueType {
+  EVENT
+  HOTEL
+  RESTAURANT
+  ACTIVITY
+  SERVICE
+}
+
+enum VenueStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+  CLOSED
+}
+
+// Multi-venue platform model
+model Venue {
+  id            String       @id @default(cuid())
+  // Core venue info
+  type          VenueType
+  status        VenueStatus  @default(PENDING)
+  publicId      String       @unique
+  
+  // Pricing and availability
+  priceRange    String?      // e.g., "$25-50", "$$", "Free"
+  availability  String?      // JSON string for complex availability
+  
+  // Business info
+  businessEmail String?
+  businessPhone String?
+  website       String?
+  socialLinks   String?      // JSON array of social media links
+  
+  // Location and contact
+  address       String?
+  city          String?
+  latitude      Float?
+  longitude     Float?
+  
+  // Images and media
+  imageUrl      String?
+  galleryUrls   String?      // JSON array of additional images
+  videoUrl      String?
+  
+  // Booking and contact
+  bookingUrl    String?
+  whatsappPhone String?
+  contactMethod String?
+  
+  // For events: date/time info
+  eventDate     DateTime?
+  
+  // For hotels: amenities and features
+  amenities     String?      // JSON array of amenities
+  features      String?      // JSON array of features
+  
+  // For restaurants: cuisine and dietary info
+  cuisineType   String?
+  dietaryOptions String?     // JSON array (vegan, halal, etc.)
+  
+  // SEO and discovery
+  tags          String?      // JSON array of tags
+  category      String?      // main category
+  subcategory   String?
+  
+  // Platform management
+  featured      Boolean      @default(false)
+  verified      Boolean      @default(false)
+  
+  // Relations
+  user          User         @relation(fields: [userId], references: [id])
+  userId        String
+  translations  VenueTranslation[]
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// Venue translations for multi-language support
+model VenueTranslation {
+  id          String  @id @default(cuid())
+  locale      Locale
+  
+  // Core content
+  title       String
+  description String
+  location    String?
+  
+  // Additional localized content
+  amenities   String? // JSON array of localized amenities
+  features    String? // JSON array of localized features
+  
+  // Relations
+  venue       Venue   @relation(fields: [venueId], references: [id])
+  venueId     String
+
+  @@unique([venueId, locale])
+}
+
+// Simple CMS-style content overrides per locale and key
+model Content {
+  id        String   @id @default(cuid())
+  key       String
+  locale    Locale
+  data      String   // JSON or plain text content
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, locale])
+}
