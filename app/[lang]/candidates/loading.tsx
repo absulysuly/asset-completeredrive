@@ -1,4 +1,4 @@
-import Skeleton from '@/components/UI/Skeleton';
+import Skeleton from '@/components/ui/Skeleton';
 
 const CandidateCardSkeleton = () => (
   <div className="flex items-center space-x-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">

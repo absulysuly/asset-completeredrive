@@ -1,7 +1,3 @@
-/* services/apiService.ts
-   Replace the file in your repo with this content (or merge the changes).
-*/
-
 import { User, UserRole, Post, Event, Article, Debate, Governorate, TeaHouseTopic, TeaHouseMessage, Language } from '../types.ts';
 import { MOCK_USERS, MOCK_POSTS, MOCK_WHISPERS, MOCK_EVENTS, MOCK_ARTICLES, MOCK_DEBATES, MOCK_TEA_HOUSE_TOPICS, MOCK_TEA_HOUSE_MESSAGES, IRAQI_GOVERNORATES_INFO } from '../constants.ts';
 import { Candidate, NewsArticle, PoliticalParty } from '../components/election/types.ts';
@@ -11,37 +7,6 @@ const simulateFetch = <T>(data: T): Promise<T> => {
     return Promise.resolve(JSON.parse(JSON.stringify(data)));
 };
 
-// Environment toggle and realFetch wrapper
-const USE_MOCKS = (typeof window !== 'undefined' && (window as any).getViteEnv?.('VITE_USE_MOCKS', 'true'))
-  ? (window as any).getViteEnv('VITE_USE_MOCKS', 'true') === 'true'
-  : true;
-
-const API_BASE = (typeof window !== 'undefined' && (window as any).getViteEnv?.('VITE_API_BASE_URL'))
-  ? (window as any).getViteEnv('VITE_API_BASE_URL')
-  : '/api';
-
-async function realFetch(path: string, opts: RequestInit = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(opts.headers || {}),
-    },
-    credentials: 'include',
-    ...opts
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`API error ${res.status}: ${text}`);
-  }
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-
-// --- API functions (mocks + real)
-// Existing read-only mock-style functions kept as-is:
 export const getParties = (): Promise<string[]> => {
     const parties = [...new Set(MOCK_USERS.filter(u => u.role === UserRole.Candidate).map(u => u.party))];
     return simulateFetch(parties);
@@ -80,11 +45,7 @@ export const getUsers = (filters: { role?: UserRole, governorate?: Governorate |
     return simulateFetch(users);
 };
 
-export const getPosts = (filters: { type?: 'Post' | 'Reel', authorId?: string, governorate?: Governorate | 'All', party?: string | 'All' } = {}): Promise<Post[]> => {
-    if (!USE_MOCKS) {
-      return realFetch('/posts', { method: 'GET' });
-    }
-
+export const getPosts = (filters: { type?: 'Post' | 'Reel', authorId?: string, governorate?: Governorate | 'All', party?: string | 'All' }): Promise<Post[]> => {
     let posts = MOCK_POSTS;
     if (filters.type) {
         posts = posts.filter(p => p.type === filters.type);
@@ -110,12 +71,12 @@ export const getPosts = (filters: { type?: 'Post' | 'Reel', authorId?: string, g
     return simulateFetch(sortedPosts);
 };
 
-export const getWhispers = (filters: {} = {}): Promise<Post[]> => {
+export const getWhispers = (filters: {}): Promise<Post[]> => {
     const sorted = MOCK_WHISPERS.sort((a, b) => parseInt(a.timestamp) - parseInt(b.timestamp));
     return simulateFetch(sorted);
 };
 
-export const getEvents = (filters: { governorate?: Governorate | 'All', party?: string | 'All' } = {}): Promise<Event[]> => {
+export const getEvents = (filters: { governorate?: Governorate | 'All', party?: string | 'All' }): Promise<Event[]> => {
     let events = MOCK_EVENTS;
     if (filters.governorate && filters.governorate !== 'All') {
         events = events.filter(e => e.organizer.governorate === filters.governorate);
@@ -126,11 +87,11 @@ export const getEvents = (filters: { governorate?: Governorate | 'All', party?: 
     return simulateFetch(events);
 };
 
-export const getArticles = (filters: { governorate?: Governorate | 'All' } = {}): Promise<Article[]> => {
+export const getArticles = (filters: { governorate?: Governorate | 'All' }): Promise<Article[]> => {
     return simulateFetch(MOCK_ARTICLES);
 };
 
-export const getDebates = (filters: { governorate?: Governorate | 'All', party?: string | 'All', participantIds?: string[] } = {}): Promise<Debate[]> => {
+export const getDebates = (filters: { governorate?: Governorate | 'All', party?: string | 'All', participantIds?: string[] }): Promise<Debate[]> => {
     let debates = MOCK_DEBATES;
     
     if (filters.governorate && filters.governorate !== 'All') {
@@ -146,11 +107,7 @@ export const getDebates = (filters: { governorate?: Governorate | 'All', party?:
     return simulateFetch(debates);
 };
 
-export const createPost = async (postDetails: Partial<Post>, author: User): Promise<Post> => {
-    if (!USE_MOCKS) {
-      return realFetch('/posts', { method: 'POST', body: JSON.stringify(postDetails) });
-    }
-
+export const createPost = (postDetails: Partial<Post>, author: User): Promise<Post> => {
     const newPost: Post = {
         id: `post-${Date.now()}`,
         author: author,
@@ -162,15 +119,10 @@ export const createPost = async (postDetails: Partial<Post>, author: User): Prom
         type: 'Post',
         ...postDetails,
     };
-    // Add to mocked posts at the front
-    MOCK_POSTS.unshift(newPost);
     return simulateFetch(newPost);
 };
 
 export const createReel = (details: { caption: string }, author: User): Promise<Post> => {
-    if (!USE_MOCKS) {
-      return realFetch('/reels', { method: 'POST', body: JSON.stringify(details) });
-    }
     const newReel: Post = {
         id: `reel-${Date.now()}`,
         author: author,
@@ -182,7 +134,6 @@ export const createReel = (details: { caption: string }, author: User): Promise<
         type: 'Reel',
         mediaUrl: 'https://picsum.photos/seed/newreel/400/700'
     };
-    MOCK_POSTS.unshift(newReel);
     return simulateFetch(newReel);
 };
 
@@ -200,6 +151,7 @@ export const socialLogin = (provider: 'google' | 'facebook'): Promise<User> => {
     return simulateFetch(MOCK_USERS.find(u => u.role === UserRole.Voter)!);
 };
 
+
 export const registerUser = (details: { name: string; email: string; role: UserRole }): Promise<User> => {
     const newUser: User = {
         id: `user-${Date.now()}`,
@@ -216,9 +168,11 @@ export const registerUser = (details: { name: string; email: string; role: UserR
     return simulateFetch(newUser);
 };
 
+
 export const checkVerificationStatus = (userId: string): Promise<User | null> => {
     const user = MOCK_USERS.find(u => u.id === userId);
     if (user) {
+        // Simulate verification after a delay
         user.emailVerified = true;
     }
     return simulateFetch(user || null);
@@ -242,55 +196,11 @@ export const followCandidate = (candidateId: string): Promise<{ success: boolean
     return simulateFetch({ success: true });
 };
 
-// Updated likePost with mock + real behavior
-export const likePost = async (postId: string): Promise<{ success: boolean; likes?: number }> => {
-  if (!USE_MOCKS) {
-    return realFetch(`/posts/${postId}/like`, { method: 'POST' });
-  }
-  const post = MOCK_POSTS.find(p => p.id === postId);
-  if (post) {
-    post.likes = (post.likes || 0) + 1;
-    return simulateFetch({ success: true, likes: post.likes });
-  }
-  return simulateFetch({ success: false, likes: 0 });
+export const likePost = (postId: string): Promise<{ success: boolean }> => {
+    console.log(`(Mock API) Liked post: ${postId}`);
+    return simulateFetch({ success: true });
 };
 
-// New sharePost endpoint
-export const sharePost = async (postId: string): Promise<{ success: boolean; shares?: number }> => {
-  if (!USE_MOCKS) {
-    return realFetch(`/posts/${postId}/share`, { method: 'POST' });
-  }
-  const post = MOCK_POSTS.find(p => p.id === postId);
-  if (post) {
-    post.shares = (post.shares || 0) + 1;
-    return simulateFetch({ success: true, shares: post.shares });
-  }
-  return simulateFetch({ success: false, shares: 0 });
-};
-
-// New addComment endpoint
-export const addComment = async (postId: string, comment: { authorId: string; content: string }): Promise<{ success: boolean; comment?: any; commentsCount?: number }> => {
-  if (!USE_MOCKS) {
-    return realFetch(`/posts/${postId}/comments`, {
-      method: 'POST',
-      body: JSON.stringify({ content: comment.content })
-    });
-  }
-  const newComment = {
-    id: `comment-${Date.now()}`,
-    author: MOCK_USERS.find(u => u.id === comment.authorId) || { id: comment.authorId, name: 'User' },
-    content: comment.content,
-    timestamp: 'Just now',
-  };
-  const post = MOCK_POSTS.find(p => p.id === postId);
-  if (post) {
-    post.comments = (post.comments || 0) + 1;
-    (post as any)._commentsList = (post as any)._commentsList || [];
-    (post as any)._commentsList.unshift(newComment);
-    return simulateFetch({ success: true, comment: newComment, commentsCount: post.comments });
-  }
-  return simulateFetch({ success: false });
-};
 
 // --- Tea House API ---
 export const getTeaHouseTopics = (language: Language): Promise<TeaHouseTopic[]> => {
@@ -344,6 +254,7 @@ export const getGovernorateDataByName = (name: string): Promise<{ governorate: a
 };
 
 export const getPartyById = (id: string): Promise<{ party: PoliticalParty; candidates: Candidate[] }> => {
+    // This is a mock; in a real app, you'd fetch the party by its ID.
     const candidates = MOCK_USERS.filter(u => u.role === UserRole.Candidate).slice(0, 8).map(c => ({
         id: c.id, name: c.name, party: c.party, imageUrl: c.avatarUrl, verified: c.verified
     }));
@@ -399,7 +310,7 @@ export const getContactValidationData = (): Promise<any[]> => {
 
 export const getEnrichmentData = (candidateId: string): Promise<any> => {
     return simulateFetch({
-        politicalProfile: 'Leans socially conservative with a focus on economic liberalization. Strong proponent of foreign investment and developing the private sector. Has voted consistently for broad economic reforms.',
+        politicalProfile: 'Leans socially conservative with a focus on economic liberalization. Strong proponent of foreign investment and developing the private sector. Has voted consistently for measures that reduce government spending.',
         influence: { socialReach: 120500, engagementRate: 4.5, sentiment: 'Positive' },
     });
 };

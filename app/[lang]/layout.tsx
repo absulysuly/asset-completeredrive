@@ -7,7 +7,6 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { getDictionary } from '@/lib/dictionaries';
 import '../globals.css';
-// FIX: Add missing React import for React.ReactNode
 import React from 'react';
 
 const noto_sans = Noto_Sans({

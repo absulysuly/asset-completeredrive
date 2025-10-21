@@ -1,24 +1,24 @@
 export interface Candidate {
   id: string;
-  name?: string;
-  gender?: string;
-  governorate?: string;
-  party?: string;
-  nomination_type?: string;
-  ballot_number?: number;
+  name: string;
+  gender: 'Male' | 'Female';
+  governorate: string;
+  party: string;
+  nomination_type: string;
+  ballot_number: number;
 }
 
 export interface PaginatedCandidates {
     data: Candidate[];
     total: number;
-    page?: number;
-    limit?: number;
+    page: number;
+    limit: number;
 }
 
 export interface Governorate {
-  name: string;
-  nameArabic: string;
-  candidates_count: number;
+  id: number;
+  name_en: string;
+  name_ar: string;
 }
 
 export interface Stats {
@@ -28,8 +28,7 @@ export interface Stats {
         Female: number;
     };
     candidates_per_governorate: {
-        governorate: string;
-        count?: number;
-        candidate_count?: number;
+        governorate_name: string;
+        candidate_count: number;
     }[];
 }

@@ -1,7 +1,10 @@
+import { fetchCandidates, fetchGovernorates } from '@/lib/api';
 import { Locale } from '@/lib/i18n-config';
 import { getDictionary } from '@/lib/dictionaries';
 import { Metadata } from 'next';
-import CandidatesClient from '@/components/candidates/CandidatesClient';
+import CandidateCard from '@/components/candidates/CandidateCard';
+import FilterPanel from '@/components/candidates/FilterPanel';
+import Pagination from '@/components/candidates/Pagination';
 
 export async function generateMetadata({
   params: { lang },
@@ -10,12 +13,70 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const dictionary = await getDictionary(lang);
   return {
-    title: `${dictionary.nav.candidates} | ${dictionary.metadata.title}`,
-    description: dictionary.metadata.description,
+    title: `${dictionary.page.candidates.title} | ${dictionary.metadata.title}`,
+    description: dictionary.page.candidates.description,
   };
 }
 
-export default async function CandidatesPage({ params: { lang } }: { params: { lang: Locale } }) {
+type CandidatesPageProps = {
+  params: { lang: Locale };
+  searchParams: {
+    page?: string;
+    query?: string;
+    governorate?: string;
+    gender?: 'Male' | 'Female';
+    sort?: string;
+  };
+};
+
+export default async function CandidatesPage({
+  params: { lang },
+  searchParams,
+}: CandidatesPageProps) {
   const dictionary = await getDictionary(lang);
-  return <CandidatesClient dictionary={dictionary} lang={lang} />;
+  const page = Number(searchParams.page) || 1;
+  const limit = 12;
+
+  const [candidatesResponse, governorates] = await Promise.all([
+    fetchCandidates({
+      page,
+      limit,
+      query: searchParams.query,
+      governorate: searchParams.governorate,
+      gender: searchParams.gender,
+      sort: searchParams.sort,
+    }),
+    fetchGovernorates(),
+  ]);
+  
+  const { data: candidates, total } = candidatesResponse;
+  const totalPages = Math.ceil(total / limit);
+
+  return (
+    <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <h1 className="mb-8 text-3xl font-bold text-gray-900 dark:text-white">
+        {dictionary.page.candidates.title}
+      </h1>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
+        <aside className="lg:col-span-1">
+          <FilterPanel governorates={governorates} dictionary={dictionary} />
+        </aside>
+        <main className="lg:col-span-3">
+          {candidates.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {candidates.map((candidate) => (
+                <CandidateCard key={candidate.id} candidate={candidate} dictionary={dictionary} lang={lang} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-12 text-center dark:border-gray-600 dark:bg-gray-800/50">
+              <p className="text-gray-500 dark:text-gray-400">{dictionary.page.candidates.noResults}</p>
+            </div>
+          )}
+
+          {totalPages > 1 && <Pagination totalPages={totalPages} />}
+        </main>
+      </div>
+    </div>
+  );
 }
