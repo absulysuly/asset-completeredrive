@@ -1,0 +1,8 @@
+/node_modules
+/.next
+/out
+/.turbo
+.env
+.env.*
+.next
+.DS_Store
