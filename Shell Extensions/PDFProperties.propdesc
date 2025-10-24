@@ -1,0 +1,156 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://schemas.microsoft.com/windows/2006/propertydescription"
+        schemaVersion="1.0">
+	<propertyDescriptionList publisher="PDF-XChange Co Ltd." product="PDF-XChange">
+		<!-- Producer -->
+		<propertyDescription name="Tracker.PDF.Producer" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="100">
+			<!--<description>Specifies the application that converted original document to PDF format.</description>-->
+			<searchInfo inInvertedIndex="false" isColumn="true" columnIndexType="OnDisk"/>
+			<labelInfo label="Producer" invitationText="Specify producer"/>
+			<typeInfo type="String" multipleValues="false" isViewable="true" isQueryable="true" includeInFullTextQuery="false" isInnate="true"/>
+			<aliasInfo></aliasInfo>			
+			<displayInfo></displayInfo>
+		</propertyDescription>
+		<!-- Creator -->
+		<propertyDescription name="Tracker.PDF.Creator" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="101">
+			<!--<description>Specifies the application that created the original document from which the PDF was converted.</description>-->
+			<searchInfo inInvertedIndex="false" isColumn="true" columnIndexType="OnDisk"/>			
+			<labelInfo label="Creator" invitationText="Specify creator"/>
+			<typeInfo type="String" multipleValues="false" isViewable="true" isQueryable="true" includeInFullTextQuery="false" isInnate="true"/>
+			<aliasInfo></aliasInfo>			
+			<displayInfo></displayInfo>
+		</propertyDescription>
+
+		<!-- Spec Version -->
+		<propertyDescription name="Tracker.PDF.SpecVersion" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="102">
+			<!--<description>Specifies the PDF Specification revision.</description>-->
+			<searchInfo inInvertedIndex="false" isColumn="true" columnIndexType="OnDisk"/>
+			<labelInfo label="PDF Specification"/>
+			<typeInfo type="String" multipleValues="false" isViewable="true" isQueryable="true" includeInFullTextQuery="false" isInnate="true"/>
+			<aliasInfo></aliasInfo>			
+			<displayInfo displayType="String"/>
+		</propertyDescription>
+
+		<propertyDescription name="Tracker.PDF.PropGroup.Securitry" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="103">
+			<!--<description>Describe security and permissions of the document</description>-->
+			<labelInfo label="Security Information"/>			
+			<typeInfo type="Null" isGroup="true"  isInnate="true"/>
+		</propertyDescription>
+		
+		<propertyDescription name="Tracker.PDF.IsEncrypted" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="104">
+			<!--<description>This property indicates if the document is encrypted or not.</description>-->
+			<labelInfo label="Encrypted"/>
+			<typeInfo type="Boolean" isViewable="true" isQueryable="true" isInnate="true"/>			
+			<displayInfo displayType="Boolean"/>
+		</propertyDescription>
+
+		<propertyDescription name="Tracker.PDF.EncryptionLevel" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="105">
+			<!--<description>This property indicates encryption level of the document.</description>-->
+			<labelInfo label="Encryption Level"/>
+			<typeInfo type="UInt32" isViewable="true" isQueryable="true" isInnate="true"/>
+			<displayInfo displayType="Enumerated">
+			<enumeratedList>
+				<enum value="0" text="None"/>
+				<enum value="1" text="40-bit RC4"/>
+				<enum value="2" text="128-bit RC4"/>
+				<enum value="3" text="128-bit AES"/>
+				<enum value="4" text="256-bit AES"/>
+			</enumeratedList>
+			</displayInfo>
+		</propertyDescription>
+
+		<!-- Printing Permissions -->
+		<propertyDescription name="Tracker.PDF.Perm.Printing" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="106">
+			<!--<description>This property indicates printing permissions for the document.</description>-->
+			<labelInfo label="Printing"/>
+			<typeInfo type="UInt32" isViewable="true" isQueryable="true" isInnate="true"/>	
+			<displayInfo displayType="Enumerated">
+			<enumeratedList>
+				<enum value="0" text="Not allowed"/>
+				<enum value="1" text="Low Resolution"/>
+				<enum value="2" text="Fully Allowed"/>
+			</enumeratedList>
+			</displayInfo>
+		</propertyDescription>
+
+		<!-- Changing Permissions -->
+		<propertyDescription name="Tracker.PDF.Perm.Changing" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="107">
+			<!--<description>This property indicates changing permissions for the document.</description>-->
+			<labelInfo label="Changing"/>
+			<typeInfo type="Boolean" isViewable="true" isQueryable="true" isInnate="true"/>		
+			<displayInfo displayType="Enumerated">
+			<enumeratedList>
+				<enum value="False" text="Not allowed"/>
+				<enum value="True" text="Allowed"/>
+			</enumeratedList>
+			</displayInfo>
+		</propertyDescription>
+
+		<!-- Copying Permissions -->
+		<propertyDescription name="Tracker.PDF.Perm.Copying" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="108">
+			<!--<description>This property indicates copying and extraction permissions for the document.</description>-->
+			<labelInfo label="Copying"/>
+			<typeInfo type="Boolean" isViewable="true" isQueryable="true" isInnate="true"/>			
+			<displayInfo displayType="Enumerated">
+			<enumeratedList>
+				<enum value="False" text="Not allowed"/>
+				<enum value="True" text="Allowed"/>
+			</enumeratedList>
+			</displayInfo>
+		</propertyDescription>
+
+		<!-- Commenting Permissions -->
+		<propertyDescription name="Tracker.PDF.Perm.Commenting" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="109">
+			<!--<description>This property indicates permissions for authoring comments and form fields.</description>-->
+			<labelInfo label="Commenting"/>
+			<typeInfo type="Boolean" isViewable="true" isQueryable="true" isInnate="true"/>			
+			<displayInfo displayType="Enumerated">
+			<enumeratedList>
+				<enum value="False" text="Not allowed"/>
+				<enum value="True" text="Allowed"/>
+			</enumeratedList>
+			</displayInfo>
+		</propertyDescription>
+
+		<!-- Form Filling Permissions -->
+		<propertyDescription name="Tracker.PDF.Perm.FormFilling" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="110">
+			<!--<description>This property indicates permissions for form fields filling or signing document.</description>-->
+			<labelInfo label="Form Filling"/>
+			<typeInfo type="Boolean" isViewable="true" isQueryable="true" isInnate="true"/>			
+			<displayInfo displayType="Enumerated">
+			<enumeratedList>
+				<enum value="False" text="Not allowed"/>
+				<enum value="True" text="Allowed"/>
+			</enumeratedList>
+			</displayInfo>
+		</propertyDescription>
+
+		<!-- Accessibility Permissions -->
+		<propertyDescription name="Tracker.PDF.Perm.Accessibility" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="111">
+			<!--<description>This property indicates accessibility permissions for the document.</description>-->
+			<labelInfo label="Content Accessibility"/>
+			<typeInfo type="Boolean" isViewable="true" isQueryable="true" isInnate="true"/>			
+			<displayInfo displayType="Enumerated">
+			<enumeratedList>
+				<enum value="False" text="Not allowed"/>
+				<enum value="True" text="Allowed"/>
+			</enumeratedList>
+			</displayInfo>
+		</propertyDescription>
+
+		<!-- Assembly Permissions -->
+		<propertyDescription name="Tracker.PDF.Perm.Assembly" formatID="{ACD00F57-BA6A-47AF-B249-77F24B44A499}" propID="112">
+			<!--<description>This property indicates assembly permissions for the document.</description>-->
+			<labelInfo label="Document Assembly"/>
+			<typeInfo type="Boolean" isViewable="true" isQueryable="true" isInnate="true"/>		
+			<displayInfo displayType="Enumerated">
+			<enumeratedList>
+				<enum value="False" text="Not allowed"/>
+				<enum value="True" text="Allowed"/>
+			</enumeratedList>
+			</displayInfo>
+		</propertyDescription>
+
+	</propertyDescriptionList>
+</schema>
