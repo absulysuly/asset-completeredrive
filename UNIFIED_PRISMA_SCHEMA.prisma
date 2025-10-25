@@ -1,0 +1,476 @@
+// ==========================================
+// UNIFIED PRISMA SCHEMA
+// Combining Social Platform + Election Data
+// Generated: 2025-10-21
+// ==========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum UserRole {
+  Voter
+  Candidate
+  Admin
+}
+
+enum PostType {
+  Post
+  Reel
+  Story
+}
+
+enum NominationType {
+  Party              // حزب - Party nomination
+  Independent        // مستقل - Independent
+  Coalition          // تحالف - Coalition/Alliance
+  Individual         // فردي - Individual
+}
+
+enum Gender {
+  Male               // ذكر
+  Female             // أنثى
+}
+
+enum CandidateStatus {
+  Active             // Currently running
+  Elected            // Won the election
+  NotElected         // Lost the election
+  Withdrawn          // Withdrew from race
+  Disqualified       // Disqualified
+}
+
+// ==========================================
+// CORE ENTITIES
+// ==========================================
+
+model Governorate {
+  id                 String                      @id @default(uuid())
+  code               String                      @unique  // e.g., "BGD", "BAS", "NIN"
+  name               String                      // English name
+  nameArabic         String                      // Arabic name
+  nameKurdish        String?                     // Kurdish name
+  slug               String                      @unique
+  region             String?                     // e.g., "Kurdistan Region", "Central Iraq"
+  population         Int?
+  registeredVoters   Int?
+  pollingStations    Int?
+
+  // Relationships
+  users              User[]
+  candidates         ElectionCandidate[]
+  events             Event[]
+  statistics         GovernorateStatistic?
+
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+
+  @@index([code])
+  @@index([slug])
+}
+
+model Party {
+  id                 String                      @id @default(uuid())
+  code               String                      @unique  // e.g., "KDP", "PUK", "SLC"
+  name               String                      // English name
+  nameArabic         String                      // Arabic name
+  nameKurdish        String?                     // Kurdish name
+  ballotNumber       Int?                        // رقم الاقتراع الحزب
+  logoUrl            String?
+  leader             String?
+  founded            Int?                        // Year founded
+  ideology           String?                     // Political ideology
+  description        String?
+  websiteUrl         String?
+
+  // Relationships
+  candidates         ElectionCandidate[]
+  socialCandidates   SocialCandidate[]
+
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+
+  @@index([code])
+  @@index([ballotNumber])
+}
+
+// ==========================================
+// ELECTION CANDIDATE (Real Election Data)
+// This is the canonical 7,769 candidate model
+// ==========================================
+
+model ElectionCandidate {
+  id                     String              @id @default(uuid())
+
+  // Core Identity Fields (from CSV)
+  fullName               String              // "Candidate's full name"
+  fullNameArabic         String?             // إسم المرشح الكامل
+  fullNameKurdish        String?
+  nameOnBallot           String?             // "Name on ballot" (usually party name)
+
+  // Ballot & Sequence
+  candidateSequence      Int                 // "Candidate Sequence" - position on ballot
+  voterNumber            String?             // "Voter number" - registration number
+
+  // Political Affiliation
+  party                  Party?              @relation(fields: [partyId], references: [id])
+  partyId                String?
+  partyName              String?             // Denormalized for quick access
+  nominationType         NominationType      // "Type Nomination" - Party/Independent/etc.
+
+  // Geographic
+  governorate            Governorate?        @relation(fields: [governorateId], references: [id])
+  governorateId          String?
+  governorateName        String?             // "Electoral district" - denormalized
+  electoralDistrict      String?             // More specific than governorate if needed
+
+  // Demographics
+  gender                 Gender              // "Sex"
+  dateOfBirth            DateTime?
+  nationalId             String?             @unique
+  age                    Int?
+
+  // Campaign Info
+  platformSummary        String?             @db.Text
+  manifesto              String?             @db.Text
+  achievements           String[]            // Array of text achievements
+  education              String?
+  occupation             String?
+
+  // Election Results
+  votes                  Int                 @default(0)
+  votePercentage         Decimal?            @db.Decimal(5,2)
+  rank                   Int?
+  status                 CandidateStatus     @default(Active)
+
+  // Media & Contact
+  photoUrl               String?
+  websiteUrl             String?
+  facebookUrl            String?
+  twitterUrl             String?
+  instagramUrl           String?
+  phone                  String?
+  email                  String?
+
+  // Social Platform Integration (optional link to social User)
+  socialUser             User?               @relation(fields: [socialUserId], references: [id])
+  socialUserId           String?             @unique
+
+  // Metadata
+  sourceFile             String?             // Which CSV this came from
+  sourceRowId            Int?                // Row number in source CSV
+  rawData                Json?               // Store original CSV row for audit
+
+  // Deduplication & Merge History
+  mergedFrom             String[]            // IDs of candidates merged into this one
+  duplicateOf            ElectionCandidate?  @relation("CandidateDuplicates", fields: [duplicateOfId], references: [id])
+  duplicateOfId          String?
+  duplicates             ElectionCandidate[] @relation("CandidateDuplicates")
+  verifiedUnique         Boolean             @default(false)
+
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+
+  @@index([candidateSequence])
+  @@index([nationalId])
+  @@index([governorateId])
+  @@index([partyId])
+  @@index([gender])
+  @@index([nominationType])
+  @@index([status])
+  @@index([fullName])
+}
+
+// ==========================================
+// SOCIAL PLATFORM USER
+// ==========================================
+
+model User {
+  id                 String                      @id @default(uuid())
+  email              String?                     @unique
+  phone              String?                     @unique
+  username           String?                     @unique
+  passwordHash       String?
+
+  // Profile
+  name               String
+  nameArabic         String?
+  nameKurdish        String?
+  avatarUrl          String?
+  bio                String?                     @db.Text
+
+  // Role & Status
+  role               UserRole
+  verified           Boolean                     @default(false)
+  active             Boolean                     @default(true)
+
+  // Political Info
+  party              String?                     // Can be free text or linked
+  governorate        Governorate?                @relation(fields: [governorateId], references: [id])
+  governorateId      String?
+
+  // Social Features
+  posts              Post[]
+  organizedEvents    Event[]                     @relation("UserOrganizedEvents")
+  debateParticipation DebateParticipant[]
+  socialCandidate    SocialCandidate?
+
+  // Link to Election Data (if this user is a real candidate)
+  electionCandidate  ElectionCandidate?
+
+  // Auth & Security
+  lastLoginAt        DateTime?
+  emailVerifiedAt    DateTime?
+  phoneVerifiedAt    DateTime?
+
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([governorateId])
+}
+
+// ==========================================
+// SOCIAL CANDIDATE (for social features)
+// Lighter model for candidates who use social platform
+// ==========================================
+
+model SocialCandidate {
+  id                 String              @id @default(uuid())
+  user               User                @relation(fields: [userId], references: [id])
+  userId             String              @unique
+
+  party              Party?              @relation(fields: [partyId], references: [id])
+  partyId            String?
+
+  platformSummary    String?             @db.Text
+  votes              Int                 @default(0)
+  followers          Int                 @default(0)
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+// ==========================================
+// SOCIAL FEATURES
+// ==========================================
+
+model Post {
+  id                 String              @id @default(uuid())
+  author             User                @relation(fields: [authorId], references: [id])
+  authorId           String
+
+  timestamp          DateTime            @default(now())
+  content            String              @db.Text
+  mediaUrl           String?
+  thumbnailUrl       String?
+
+  likes              Int                 @default(0)
+  comments           Int                 @default(0)
+  shares             Int                 @default(0)
+  views              Int                 @default(0)
+
+  isSponsored        Boolean             @default(false)
+  isPinned           Boolean             @default(false)
+  type               PostType
+
+  // Geographic targeting
+  governorates       String[]            // Array of governorate codes
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([authorId])
+  @@index([timestamp])
+  @@index([type])
+}
+
+model Event {
+  id                 String              @id @default(uuid())
+  title              String
+  titleArabic        String?
+  titleKurdish       String?
+  description        String?             @db.Text
+
+  date               DateTime
+  endDate            DateTime?
+  location           String
+  locationDetails    String?             @db.Text
+
+  organizer          User                @relation("UserOrganizedEvents", fields: [organizerId], references: [id])
+  organizerId        String
+
+  governorate        Governorate?        @relation(fields: [governorateId], references: [id])
+  governorateId      String?
+
+  attendeeCount      Int                 @default(0)
+  capacity           Int?
+
+  imageUrl           String?
+  isPublic           Boolean             @default(true)
+  isCancelled        Boolean             @default(false)
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([date])
+  @@index([governorateId])
+  @@index([organizerId])
+}
+
+model Debate {
+  id                 String              @id @default(uuid())
+  title              String
+  titleArabic        String?
+  titleKurdish       String?
+  topic              String              @db.Text
+
+  scheduledTime      DateTime
+  duration           Int?                // Minutes
+  isLive             Boolean             @default(false)
+  streamUrl          String?
+
+  participants       DebateParticipant[]
+
+  viewerCount        Int                 @default(0)
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([scheduledTime])
+  @@index([isLive])
+}
+
+model DebateParticipant {
+  debateId           String
+  userId             String
+  debate             Debate              @relation(fields: [debateId], references: [id])
+  user               User                @relation(fields: [userId], references: [id])
+
+  position           String?             // Their stance/position
+  speakingTime       Int?                // Seconds allocated
+
+  @@id([debateId, userId])
+}
+
+model Article {
+  id                 String              @id @default(uuid())
+  source             String
+  timestamp          DateTime
+  title              String
+  titleArabic        String?
+  titleKurdish       String?
+  authorName         String
+  contentSnippet     String              @db.Text
+  url                String
+  imageUrl           String?
+
+  governorates       String[]
+  tags               String[]
+
+  views              Int                 @default(0)
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([timestamp])
+  @@index([source])
+}
+
+// ==========================================
+// STATISTICS & ANALYTICS
+// ==========================================
+
+model GovernorateStatistic {
+  governorate        Governorate         @relation(fields: [governorateId], references: [id])
+  governorateId      String              @id
+
+  registeredVoters   Int                 @default(0)
+  pollingStations    Int                 @default(0)
+  totalCandidates    Int                 @default(0)
+  maleCandidates     Int                 @default(0)
+  femaleCandidates   Int                 @default(0)
+
+  // Election Results
+  totalVotesCast     Int?
+  turnoutPercentage  Decimal?            @db.Decimal(5,2)
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model GovernorateParticipation {
+  id                 Int                 @id @default(autoincrement())
+  governorateId      String
+  governorateName    String
+  estimatedTurnout   Int
+  actualTurnout      Int?
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model DashboardSnapshot {
+  id                 Int                 @id @default(1)
+
+  totalCandidates    Int                 @default(0)
+  totalVoters        Int                 @default(0)
+  totalParties       Int                 @default(0)
+
+  metrics            Json                // Flexible JSON for additional metrics
+
+  updatedAt          DateTime            @updatedAt
+}
+
+// ==========================================
+// DATA QUALITY & AUDIT
+// ==========================================
+
+model DataImport {
+  id                 String              @id @default(uuid())
+
+  sourceFile         String
+  importType         String              // "candidates", "voters", "results"
+  recordsProcessed   Int
+  recordsImported    Int
+  recordsFailed      Int
+
+  status             String              // "pending", "processing", "completed", "failed"
+  errorLog           String?             @db.Text
+
+  importedBy         String?             // User who triggered import
+  startedAt          DateTime            @default(now())
+  completedAt        DateTime?
+
+  createdAt          DateTime            @default(now())
+}
+
+model AuditLog {
+  id                 String              @id @default(uuid())
+
+  entityType         String              // "candidate", "user", "post", etc.
+  entityId           String
+  action             String              // "create", "update", "delete", "merge"
+
+  changes            Json?               // Before/after snapshot
+  performedBy        String?             // User ID
+  ipAddress          String?
+  userAgent          String?
+
+  createdAt          DateTime            @default(now())
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+}
